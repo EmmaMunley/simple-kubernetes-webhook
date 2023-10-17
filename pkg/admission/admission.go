@@ -9,10 +9,9 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"github.com/slackhq/simple-kubernetes-webhook/pkg/mutation"
 	"github.com/slackhq/simple-kubernetes-webhook/pkg/validation"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	admissionv1 "k8s.io/api/admission/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 )
@@ -23,36 +22,17 @@ type Admitter struct {
 	Request *admissionv1.AdmissionRequest
 }
 
-// MutatePodReview takes an admission request and mutates the pod within,
-// it returns an admission review with mutations as a json patch (if any)
-func (a Admitter) MutatePodReview() (*admissionv1.AdmissionReview, error) {
-	pod, err := a.Pod()
-	if err != nil {
-		e := fmt.Sprintf("could not parse pod in admission review request: %v", err)
-		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
-	}
-
-	m := mutation.NewMutator(a.Logger)
-	patch, err := m.MutatePodPatch(pod)
-	if err != nil {
-		e := fmt.Sprintf("could not mutate pod: %v", err)
-		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
-	}
-
-	return patchReviewResponse(a.Request.UID, patch)
-}
-
-// MutatePodReview takes an admission request and validates the pod within
+// ValidatePipelineReview takes an admission request and validates the pod within
 // it returns an admission review
-func (a Admitter) ValidatePodReview() (*admissionv1.AdmissionReview, error) {
-	pod, err := a.Pod()
+func (a Admitter) ValidatePipelineReview() (*admissionv1.AdmissionReview, error) {
+	pipeline, err := a.Pipeline()
 	if err != nil {
 		e := fmt.Sprintf("could not parse pod in admission review request: %v", err)
 		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
 	}
 
 	v := validation.NewValidator(a.Logger)
-	val, err := v.ValidatePod(pod)
+	val, err := v.ValidatePipeline(pipeline)
 	if err != nil {
 		e := fmt.Sprintf("could not validate pod: %v", err)
 		return reviewResponse(a.Request.UID, false, http.StatusBadRequest, e), err
@@ -65,18 +45,18 @@ func (a Admitter) ValidatePodReview() (*admissionv1.AdmissionReview, error) {
 	return reviewResponse(a.Request.UID, true, http.StatusAccepted, "valid pod"), nil
 }
 
-// Pod extracts a pod from an admission request
-func (a Admitter) Pod() (*corev1.Pod, error) {
-	if a.Request.Kind.Kind != "Pod" {
-		return nil, fmt.Errorf("only pods are supported here")
+// Pipeline extracts a pipeline from an admission request
+func (a Admitter) Pipeline() (v1.Pipeline, error) {
+	if a.Request.Kind.Kind != "Pipeline" {
+		return v1.Pipeline{}, fmt.Errorf("only pipelines are supported here")
 	}
 
-	p := corev1.Pod{}
+	p := v1.Pipeline{}
 	if err := json.Unmarshal(a.Request.Object.Raw, &p); err != nil {
-		return nil, err
+		return v1.Pipeline{}, err
 	}
 
-	return &p, nil
+	return p, nil
 }
 
 // reviewResponse TODO: godoc

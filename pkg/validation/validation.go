@@ -2,8 +2,16 @@ package validation
 
 import (
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
+	v1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/webhook/resourcesemantics"
 )
+
+var types = map[schema.GroupVersionKind]resourcesemantics.GenericCRD{
+	// v1
+	v1.SchemeGroupVersion.WithKind("Task"):     &v1.Task{},
+	v1.SchemeGroupVersion.WithKind("Pipeline"): &v1.Pipeline{},
+}
 
 // Validator is a container for mutation
 type Validator struct {
@@ -15,9 +23,9 @@ func NewValidator(logger *logrus.Entry) *Validator {
 	return &Validator{Logger: logger}
 }
 
-// podValidators is an interface used to group functions mutating pods
-type podValidator interface {
-	Validate(*corev1.Pod) (validation, error)
+// pipelineValidators is an interface used to group functions mutating pods
+type pipelineValidator interface {
+	Validate(v1.Pipeline) (validation, error)
 	Name() string
 }
 
@@ -27,27 +35,27 @@ type validation struct {
 }
 
 // ValidatePod returns true if a pod is valid
-func (v *Validator) ValidatePod(pod *corev1.Pod) (validation, error) {
-	var podName string
-	if pod.Name != "" {
-		podName = pod.Name
+func (v *Validator) ValidatePipeline(pipeline v1.Pipeline) (validation, error) {
+	var pipelineName string
+	if pipeline.Name != "" {
+		pipelineName = pipeline.Name
 	} else {
-		if pod.ObjectMeta.GenerateName != "" {
-			podName = pod.ObjectMeta.GenerateName
+		if pipeline.ObjectMeta.GenerateName != "" {
+			pipelineName = pipeline.ObjectMeta.GenerateName
 		}
 	}
-	log := logrus.WithField("pod_name", podName)
+	log := logrus.WithField("pod_name", pipelineName)
 	log.Print("delete me")
 
 	// list of all validations to be applied to the pod
-	validations := []podValidator{
+	validations := []pipelineValidator{
 		nameValidator{v.Logger},
 	}
 
 	// apply all validations
 	for _, v := range validations {
 		var err error
-		vp, err := v.Validate(pod)
+		vp, err := v.Validate(pipeline)
 		if err != nil {
 			return validation{Valid: false, Reason: err.Error()}, err
 		}
@@ -56,5 +64,5 @@ func (v *Validator) ValidatePod(pod *corev1.Pod) (validation, error) {
 		}
 	}
 
-	return validation{Valid: true, Reason: "valid pod"}, nil
+	return validation{Valid: true, Reason: "valid pipeline"}, nil
 }

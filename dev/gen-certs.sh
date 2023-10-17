@@ -2,7 +2,7 @@
 
 openssl genrsa -out ca.key 2048
 
-openssl req -new -x509 -days 365 -key ca.key \
+openssl req -new -x509 -days 3650 -key ca.key \
   -subj "/C=AU/CN=simple-kubernetes-webhook"\
   -out ca.crt
 
@@ -12,7 +12,7 @@ openssl req -newkey rsa:2048 -nodes -keyout server.key \
 
 openssl x509 -req \
   -extfile <(printf "subjectAltName=DNS:simple-kubernetes-webhook.default.svc") \
-  -days 365 \
+  -days 3650 \
   -in server.csr \
   -CA ca.crt -CAkey ca.key -CAcreateserial \
   -out server.crt
@@ -23,7 +23,7 @@ kubectl create secret tls simple-kubernetes-webhook-tls \
   --cert=server.crt \
   --key=server.key \
   --dry-run=client -o yaml \
-  > ./manifests/webhook/webhook.tls.secret.yaml
+  > ./dev/manifests/webhook/webhook.tls.secret.yaml
 
 echo
 echo ">> MutatingWebhookConfiguration caBundle:"
