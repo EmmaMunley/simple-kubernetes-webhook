@@ -16,7 +16,7 @@ func main() {
 	setLogger()
 
 	// handle our core application
-	http.HandleFunc("/validate-pipelines", ServeValidatePipelines)
+	http.HandleFunc("/validate-pipelines-and-tasks", ServeValidatePipelinesAndTasks)
 	http.HandleFunc("/health", ServeHealth)
 
 	// start the server
@@ -38,9 +38,9 @@ func ServeHealth(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "OK")
 }
 
-// ServeValidatePipelines validates an admission request and then writes an admission
+// ServeValidatePipelinesAndTasks validates an admission request and then writes an admission
 // review to `w`
-func ServeValidatePipelines(w http.ResponseWriter, r *http.Request) {
+func ServeValidatePipelinesAndTasks(w http.ResponseWriter, r *http.Request) {
 	logger := logrus.WithField("uri", r.RequestURI)
 	logger.Debug("received validation request")
 
@@ -55,8 +55,21 @@ func ServeValidatePipelines(w http.ResponseWriter, r *http.Request) {
 		Logger:  logger,
 		Request: in.Request,
 	}
+	var out *admissionv1.AdmissionReview
 
-	out, err := adm.ValidatePipelineReview()
+	switch adm.Request.Kind.Kind {
+	case "Pipeline":
+		out, err = adm.ValidatePipelineReview()
+	case "Task":
+		out, err = adm.ValidateTaskReview()
+	default:
+		err := fmt.Errorf("only pipeline and tasks are supported here")
+		e := fmt.Sprintf("could not parse admission response: %v", err)
+		logger.Error(e)
+		http.Error(w, e, http.StatusInternalServerError)
+		return
+	}
+
 	if err != nil {
 		e := fmt.Sprintf("could not generate admission response: %v", err)
 		logger.Error(e)

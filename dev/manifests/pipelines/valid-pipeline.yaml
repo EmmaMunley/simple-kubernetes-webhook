@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: good-pipeline
+  name: valid-pipeline
 spec:
   params:
     - name: username

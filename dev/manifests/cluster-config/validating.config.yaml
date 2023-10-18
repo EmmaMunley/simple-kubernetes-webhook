@@ -8,13 +8,13 @@ webhooks:
       - apiGroups: ["tekton.dev"]
         apiVersions: ["v1"]
         operations: ["CREATE"]
-        resources: ["pipelines"]
+        resources: ["pipelines", "tasks"]
         scope: "*"
     clientConfig:
       service:
         namespace: default
         name: simple-kubernetes-webhook
-        path: /validate-pipelines
+        path: /validate-pipelines-and-tasks
         port: 443
       caBundle: |
         LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMzakNDQWNZQ0NRQ3RSbERld2dlc1VEQU5CZ2tx
