@@ -1,8 +1,8 @@
 {
   "yaml.schemas": {
     "https://json.schemastore.org/yamllint.json": [
-      "file:///Users/emmamunley/go/src/test/simple-kubernetes-webhook/dev/manifests/tasks/invalid-task.yaml",
-      "file:///Users/emmamunley/go/src/test/simple-kubernetes-webhook/dev/manifests/tasks/task.yaml"
+      "file:///Users/emmamunley/go/src/test/tekton-webhook/dev/manifests/tasks/invalid-task.yaml",
+      "file:///Users/emmamunley/go/src/test/tekton-webhook/dev/manifests/tasks/task.yaml"
     ]
   }
 }

@@ -2,27 +2,27 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: simple-kubernetes-webhook
-  name: simple-kubernetes-webhook
+    app: tekton-webhook
+  name: tekton-webhook
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: simple-kubernetes-webhook
+      app: tekton-webhook
   template:
     metadata:
       labels:
-        app: simple-kubernetes-webhook
+        app: tekton-webhook
     spec:
       tolerations:
         - key: acme.com/lifespan-remaining
           operator: Exists
           effect: NoSchedule
       containers:
-        - image: simple-kubernetes-webhook:latest
+        - image: tekton-webhook:latest
           imagePullPolicy: Never
-          name: simple-kubernetes-webhook
+          name: tekton-webhook
           env:
             - name: TLS
               value: "true"
@@ -37,4 +37,4 @@ spec:
       volumes:
         - name: tls
           secret:
-            secretName: simple-kubernetes-webhook-tls
+            secretName: tekton-webhook-tls
