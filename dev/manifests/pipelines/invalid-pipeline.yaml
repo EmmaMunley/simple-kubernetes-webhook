@@ -8,5 +8,9 @@ spec:
       type: string
   tasks:
     - name: hello
-      taskRef:
-        name: hello
+      taskSpec:
+        - name: echo
+          image: alpine
+          script: |
+            #!/bin/sh
+            echo "Hello World"

@@ -45,30 +45,55 @@ deploy: push delete deploy-config
 	@echo "\n🚀 Deploying tekton-webhook..."
 	kubectl apply -f dev/manifests/webhook/
 
+.PHONY: install-tekton
+install-tekton:
+	@echo "\n⚙️  Installing tekton..."
+	kubectl apply --filename https://storage.googleapis.com/tekton-releases/pipeline/latest/release.yaml
+
 .PHONY: delete
 delete:
 	@echo "\n♻️  Deleting tekton-webhook deployment if existing..."
 	kubectl delete -f dev/manifests/webhook/ || true
 
-.PHONY: pod
-pod:
-	@echo "\n🚀 Deploying test pod..."
-	kubectl apply -f dev/manifests/pods/lifespan-seven.pod.yaml
+.PHONY: valid-pipeline
+valid-pipeline:
+	@echo "\n🚀 Deploying \"valid\" pipeline..."
+	kubectl apply -f dev/manifests/pipelines/valid-pipeline.yaml
 
-.PHONY: delete-pod
-delete-pod:
-	@echo "\n♻️ Deleting test pod..."
-	kubectl delete -f dev/manifests/pods/lifespan-seven.pod.yaml
+.PHONY: delete-valid-pipeline
+delete-valid-pipeline:
+	@echo "\n🚀 Deleting \"valid\" pipeline..."
+	kubectl delete -f dev/manifests/pipelines/valid-pipeline.yaml
 
-.PHONY: bad-pod
-bad-pod:
-	@echo "\n🚀 Deploying \"bad\" pod..."
-	kubectl apply -f dev/manifests/pods/bad-name.pod.yaml
+.PHONY: invalid-pipeline
+invalid-pipeline:
+	@echo "\n🚀 Deploying \"invalid\" pipeline..."
+	kubectl apply -f dev/manifests/pipelines/invalid-pipeline.yaml
 
-.PHONY: delete-bad-pod
-delete-bad-pod:
-	@echo "\n🚀 Deleting \"bad\" pod..."
-	kubectl delete -f dev/manifests/pods/bad-name.pod.yaml
+.PHONY: delete-invalid-pipeline
+delete-invalid-pipeline:
+	@echo "\n🚀 Deleting \"invalid\" pipeline..."
+	kubectl delete -f dev/manifests/pipelines/invalid-pipeline.yaml
+
+.PHONY: valid-task
+valid-task:
+	@echo "\n🚀 Deploying \"valid\" task..."
+	kubectl apply -f dev/manifests/tasks/valid-task.yaml
+
+.PHONY: delete-valid-task
+delete-valid-task:
+	@echo "\n🚀 Deleting \"valid\" task..."
+	kubectl delete -f dev/manifests/tasks/valid-task.yaml
+
+.PHONY: invalid-task
+invalid-task:
+	@echo "\n🚀 Deploying \"invalid\" task..."
+	kubectl apply -f dev/manifests/tasks/invalid-task.yaml
+
+.PHONY: delete-invalid-task
+delete-invalid-task:
+	@echo "\n🚀 Deleting \"invalid\" task..."
+	kubectl delete -f dev/manifests/tasks/invalid-task.yaml
 
 .PHONY: taint
 taint:
@@ -81,4 +106,4 @@ logs:
 	kubectl logs -l app=tekton-webhook -f
 
 .PHONY: delete-all
-delete-all: delete delete-config delete-pod delete-bad-pod
+delete-all: delete delete-config delete-valid-pipeline delete-invalid-pipeline delete-valid-task delete-invalid-task

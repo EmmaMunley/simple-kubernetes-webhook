@@ -1,10 +1,5 @@
-# tekton-webhook
-
-This is a simple [Kubernetes admission webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/). It is meant to be used as a validating and mutating admission webhook only and does not support any controller logic. It has been developed as a simple Go web service without using any framework or boilerplate such as kubebuilder.
-
-This project is aimed at illustrating how to build a fully functioning admission webhook in the simplest way possible. Most existing examples found on the web rely on heavy machinery using powerful frameworks, yet fail to illustrate how to implement a lightweight webhook that can do much needed actions such as rejecting a pod for compliance reasons, or inject helpful environment variables.
-
-For readability, this project has been stripped of the usual production items such as: observability instrumentation, release scripts, redundant deployment configurations, etc. As such, it is not meant to use as-is in a production environment. This project is, in fact, a simplified fork of a system used accross all Kubernetes production environments at Slack.
+# tekton-webhook-admission-webhook
+This is a webhook admission webhook that adds validation for Tekton pipelines and tasks.
 
 ## Installation
 This project can fully run locally and includes automation to deploy a local Kubernetes cluster (using Kind).
@@ -13,7 +8,7 @@ This project can fully run locally and includes automation to deploy a local Kub
 * Docker
 * kubectl
 * [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
-* Go >=1.16 (optional)
+* Go >=1.19
 
 ## Usage
 ### Create Cluster
@@ -109,55 +104,34 @@ And hit it's health endpoint from your local machine:
 OK
 ```
 
-### Deploying pods
-Deploy a valid test pod that gets succesfully created:
+### Deploying tasks
+Deploy a valid task that gets successfully created:
 ```
-❯ make pod
+❯ make valid-task
 
-🚀 Deploying test pod...
-kubectl apply -f dev/manifests/pods/lifespan-seven.pod.yaml
-pod/lifespan-seven created
+🚀 Deploying valid pod...
+kubectl apply -f dev/manifests/tasks/valid-task.yaml
+tasks/valid-task created
 ```
-You should see in the admission webhook logs that the pod got mutated and validated.
+You should see in the admission webhook logs that the task was validated and created.
 
-Deploy a non valid pod that gets rejected:
+Deploy an invalid task that gets rejected:
 ```
-❯ make bad-pod
+❯ make invalid-task
 
-🚀 Deploying "bad" pod...
-kubectl apply -f dev/manifests/pods/bad-name.pod.yaml
-Error from server: error when creating "dev/manifests/pods/bad-name.pod.yaml": admission webhook "tekton.webhook.config" denied the request: pod name contains "offensive"
+🚀 Deploying "invalid" task...
+kubectl apply -f dev/manifests/tasks/invalid-task.yaml
+Error from server: error when creating "dev/manifests/tasks/invalid-task.yaml": admission webhook "tekton.webhook.config" denied the request: pod name contains "offensive"
 ```
-You should see in the admission webhook logs that the pod validation failed. It's possible you will also see that the pod was mutated, as webhook configurations are not ordered.
+You should see in the admission webhook logs that the pod validation failed.
 
-## Testing
-Unit tests can be run with the following command:
-```
-$ make test
-go test ./...
-?   	github.com/slackhq/tekton-webhook	[no test files]
-ok  	github.com/slackhq/tekton-webhook/pkg/admission	0.611s
-ok  	github.com/slackhq/tekton-webhook/pkg/mutation	1.064s
-ok  	github.com/slackhq/tekton-webhook/pkg/validation	0.749s
-```
 
 ## Admission Logic
 A set of validations and mutations are implemented in an extensible framework. Those happen on the fly when a pod is deployed and no further resources are tracked and updated (ie. no controller logic).
 
 ### Validating Webhooks
 #### Implemented
-- [name validation](pkg/validation/name_validator.go): validates that a pod name doesn't contain any offensive string
-
-#### How to add a new pod validation
-To add a new pod mutation, create a file `pkg/validation/MUTATION_NAME.go`, then create a new struct implementing the `validation.podValidator` interface.
-
-### Mutating Webhooks
-#### Implemented
-- [inject env](pkg/mutation/inject_env.go): inject environment variables into the pod such as `KUBE: true`
-- [minimum pod lifespan](pkg/mutation/minimum_lifespan.go): inject a set of tolerations used to match pods to nodes of a certain age, the tolerations injected are controlled via the `acme.com/lifespan-requested` pod label.
-
-#### How to add a new pod mutation
-To add a new pod mutation, create a file `pkg/mutation/MUTATION_NAME.go`, then create a new struct implementing the `mutation.podMutator` interface.
-
+- [pipeline name validation](pkg/validation/name_validator.go): validates that a pipeline name doesn't contain any offensive string
+- [task name validation](pkg/validation/name_validator.go): validates that a task name doesn't contain any offensive string
 
 
